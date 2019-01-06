@@ -84,19 +84,19 @@
     }
   },
   "variables": {
-    "SolutionName": "MySolution",
-    "SolutionVersion": "1.0",
-    "SolutionPublisher": "Contoso",
-    "ProductName": "SampleSolution",
+    "SolutionName": "Sync ARM Objects",
+    "SolutionVersion": "0.1",
+    "SolutionPublisher": "Sol Solutions",
+    "ProductName": "Sync Engine",
 
     "LogAnalyticsApiVersion": "2015-11-01-preview",
     "AutomationApiVersion": "2015-10-31",
 
     "Runbook": {
-      "Name": "MyRunbook",
-      "Description": "Sample runbook",
+      "Name": "SyncAllARMObjectsToLogAnalytics",
+      "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
       "Type": "PowerShell",
-      "Uri": "https://raw.githubusercontent.com/user/myrepo/master/samples/MyRunbook.ps1",
+      "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1",
       "JobGuid": "[parameters('runbookJobGuid')]"
     },
 
