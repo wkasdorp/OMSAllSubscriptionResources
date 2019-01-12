@@ -16,12 +16,14 @@
     },
     "workspaceregionId": {
       "type": "string",
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "Description": "Region of Log Analytics workspace."
       }
     },
     "regionId": {
       "type": "string",
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "Description": "Region of Automation account."
       }
