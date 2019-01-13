@@ -8,17 +8,16 @@
         "Description": "Name of existing Log Analytics workspace."
       }
     },
+    "workspaceResourceGroup":  {
+      "type": "string",
+      "metadata": {
+        "Description": "Resource Group of workspace."
+      }
+    },
     "accountName": {
       "type": "string",
       "metadata": {
-        "Description": "Name of existing Automation account."
-      }
-    },
-    "workspaceregionId": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]",
-      "metadata": {
-        "Description": "Region of Log Analytics workspace."
+        "Description": "Name of existing Automation Account."
       }
     },
     "regionId": {
@@ -52,7 +51,7 @@
   "resources": [
     {
       "name": "[concat(variables('SolutionName'), '[' ,parameters('workspacename'), ']')]",
-      "location": "[parameters('workspaceRegionId')]",
+      "location": "[parameters('regionID')]",
       "tags": { },
       "type": "Microsoft.OperationsManagement/solutions",
       "apiVersion": "[variables('LogAnalyticsApiVersion')]",
@@ -61,7 +60,7 @@
         "[resourceId('Microsoft.Automation/automationAccounts/modules/', parameters('accountName'), variables('Module').Name)]"
       ],
       "properties": {
-        "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspacename'))]",
+        "workspaceResourceId": "[resourceId(parameters('workspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('workspacename'))]",
         "referencedResources": [
           "[resourceId('Microsoft.Automation/automationAccounts/modules/', parameters('accountName'), variables('Module').Name)]"
         ],
