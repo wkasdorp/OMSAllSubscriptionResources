@@ -55,7 +55,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
     Write-Verbose "-- setting context"
     $context = Set-AzureRmcontext -subscriptionID $subscriptionID
     
-    Write-Verbose "-- getting full resource list"
+    Write-Verbose "-- getting full resource list for subscription $($context.SubscriptionName)"
 
     $resourceList = @()
     Write-Verbose "NOTE: for sure we will need to push data in chunks, the REST body will be limited?"
@@ -76,7 +76,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         $body = $resourceList | ConvertTo-Json
 
         # Send the data to Log Analytics.
-        Write-Verbose "- sending data to Log Analytics"
+        Write-Verbose "-- sending data to Log Analytics."
         Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
     }
 }
