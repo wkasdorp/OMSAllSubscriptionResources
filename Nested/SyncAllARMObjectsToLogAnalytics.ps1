@@ -18,7 +18,7 @@ Param
 )
 
 #
-# maximum number of objects to send in one shot. 30 MB is the max.
+# maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects.
 #
 $batchSize = 1000
 
@@ -29,6 +29,9 @@ Import-Module AzureRM.Profile
 Import-Module AzureRM.Resources
 Import-Module AzureRM.OperationalInsights -ErrorAction stop
 
+#
+# Logging on/off
+#
 $VerbosePreference="continue"
 
 # Authenticate to the Automation account using the Azure connection created when the Automation account was created.
@@ -54,12 +57,11 @@ $workspaceKeys = $workspace | Get-AzureRmOperationalInsightsWorkspaceSharedKeys 
 $customerId = $workspace.CustomerId
 $sharedKey = $workspaceKeys.PrimarySharedKey
 
-Write-Verbose "- list of tags to be added to the logfile:"
-$tagnameList -join ', ' | Write-Verbose
-
 #
 # loop over subscriptions
 #
+Write-Verbose "- list of tags to be added to the logfile:"
+$tagnameList -join ', ' | Write-Verbose
 if (-not $subscriptionIDList) {
     Write-Verbose "- using default subscription."
     $subscriptionIDList = @([guid](Get-AzureRmContext).Subscription.Id)
@@ -68,14 +70,17 @@ Write-Verbose "- Preparing to write data to log $($logName)."
 Write-verbose "- looping over subscription(s)."
 foreach ($subscriptionID in $subscriptionIDlist)
 {
-    Write-Verbose "-- setting context"
-    $context = Set-AzureRmcontext -subscriptionID $subscriptionID
-    
-    Write-Verbose "-- getting full resource list for subscription $($context.SubscriptionName)"
+    Write-Verbose "-- setting AzureRM context."
+    $context = Set-AzureRmcontext -subscriptionID $subscriptionID    
+    Write-Verbose "-- reading full resource list for subscription '$($context.Subscription.Name)' in chunks of $batchSize objects."
 
     $resourceList = @()
-    Write-Verbose "NOTE: for sure we will need to push data in chunks, the REST body will be limited?"
-    $resourceList += Get-AzureRmResourceGroup -PipelineVariable rg | ForEach-Object {
+    $batchCount = 0
+    $objectCount = 0
+    Get-AzureRmResourceGroup -PipelineVariable rg | ForEach-Object {
+        #
+        # first, get the RG details and add that to the output records.
+        #
         $record = [pscustomobject]@{
             SubscriptionId = $subscriptionId.ToString()
             SubscriptionName = $context.SubscriptionName
@@ -88,8 +93,13 @@ foreach ($subscriptionID in $subscriptionIDlist)
         {
             $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
         }
-        $record
-    
+        $resourceList += $record
+        $objectCount++
+        $batchCount++
+        
+        #
+        # get all the child objects and add the RG reference
+        #
         Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName -PipelineVariable resource | ForEach-Object {
             $record = [pscustomobject]@{
                 SubscriptionId = $subscriptionId.ToString()
@@ -98,22 +108,44 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 Name = $resource.Name
                 Location = $resource.Location
                 ResourceType = $resource.ResourceType
-            }
-            
+            }            
             foreach ($tagname in $tagnameList)
             {
                 $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
             }
-            $record
+            $resourceList += $record
+            $objectCount++
+            $batchCount++
+        }
+        
+        #
+        # if we reach or exceed the batch size, flush. Note that resourceList at least contains the
+        # full count of the objects in the resource group. Since the maximum objects in an RG is 800, the total count
+        # can reach at least 1600 before flushing (current RG plus the previous one.).
+        #
+        if ($batchCount -ge $batchSize)
+        {
+            Write-Verbose "--- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
+            $body = $resourceList | ConvertTo-Json
+            try {
+                Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
+            } catch {
+                $ErrorMessage = $_.Exception.Message
+                throw "Failed to write to OMS Workspace: $ErrorMessage"
+            }
+            $resourceList = @()
+            $batchCount = 0    
         }
     }  
 
-    if ($null -ne $resourceList) {
-        # Convert the job data to json
+    #
+    # Flush any leftover records after processing the subscription. 
+    #
+    if ($batchCount -gt 0)
+    {
+        Write-Verbose "--- Flushing final $batchCount objects to the workspace. Total object count: $objectCount"
         $body = $resourceList | ConvertTo-Json
-
-        # Send the data to Log Analytics.
-        Write-Verbose "-- sending data to Log Analytics."
         Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
     }
+    Write-Verbose "-- Wrote $objectCount objects for subscription '$($context.Subscription.Name)'"
 }
