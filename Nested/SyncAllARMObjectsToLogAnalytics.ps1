@@ -71,9 +71,15 @@ Write-verbose "- looping over subscription(s)."
 foreach ($subscriptionID in $subscriptionIDlist)
 {
     Write-Verbose "-- setting AzureRM context."
-    $context = Set-AzureRmcontext -subscriptionID $subscriptionID    
+    try {
+        $context = Set-AzureRmcontext -subscriptionID $subscriptionID               
+    }
+    catch {
+        $ErrorMessage = $_.Exception.Message
+        throw "Failed to authenticate to subscriptionID '$subscriptionID': $ErrorMessage"
+    }
+    
     Write-Verbose "-- reading full resource list for subscription '$($context.Subscription.Name)' in chunks of $batchSize objects."
-
     $resourceList = @()
     $batchCount = 0
     $objectCount = 0
@@ -130,8 +136,6 @@ foreach ($subscriptionID in $subscriptionIDlist)
             try {
                 Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
             } catch {
-                $ErrorMessage = $_.Exception.Message
-                throw "Failed to write to OMS Workspace: $ErrorMessage"
             }
             $resourceList = @()
             $batchCount = 0    
