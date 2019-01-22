@@ -8,7 +8,7 @@ Param
     [Parameter(Mandatory = $True)]
     [string]$logName,
     # List of subscriptions (GUIDs) to sync. Default: subscripion of the automation account. 
-    # runbook input example: [b40a7802-5e7e-47d1-8011-e2b433bfb04f,0ff9f697-f328-4943-b2f5-54b37ae27f1a]
+    # runbook input example: ["4d0761b7-6383-47c3-8398-0fb138fb4b46","0568048c-62e3-485e-bc1b-156f2867e43c"]
     [Parameter(Mandatory = $false)]
     [Guid[]]$subscriptionIDList,
     # List of tag names to sync. Each name will have its own column.
@@ -25,9 +25,9 @@ $batchSize = 1000
 #
 # import modules before we start verbose mode... The OMS one is not present in the account by default. 
 #
-Import-Module AzureRM.Profile
-Import-Module AzureRM.Resources
-Import-Module AzureRM.OperationalInsights -ErrorAction stop
+Import-Module AzureRM.Profile -Verbose:$false
+Import-Module AzureRM.Resources -Verbose:$false
+Import-Module AzureRM.OperationalInsights -ErrorAction stop -Verbose:$false
 
 #
 # Logging on/off
