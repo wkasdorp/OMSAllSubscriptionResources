@@ -4,17 +4,24 @@ Param
     # target Log Analytics workspace
     [Parameter(Mandatory = $True)]
     [string]$workspacename,
+
     # name of the custom log where data is written.
     [Parameter(Mandatory = $True)]
     [string]$logName,
+    
     # List of subscriptions (GUIDs) to sync. Default: subscripion of the automation account. 
     # runbook input example: ["4d0761b7-6383-47c3-8398-0fb138fb4b46","0568048c-62e3-485e-bc1b-156f2867e43c"]
     [Parameter(Mandatory = $false)]
     [Guid[]]$subscriptionIDList,
+    
     # List of tag names to sync. Each name will have its own column.
     # runbook input example: ["owner","bo-number"]
     [Parameter(Mandatory = $false)]
-    [String[]]$tagnameList
+    [String[]]$tagnameList,
+    
+    # add some VM details: OStype, Powerstate
+    [Parameter(Mandatory = $false)]
+    [bool]$AddVmDetails = $false
 )
 
 #
@@ -27,6 +34,7 @@ $batchSize = 1000
 #
 Import-Module AzureRM.Profile -Verbose:$false
 Import-Module AzureRM.Resources -Verbose:$false
+Import-Module AzureRM.Compute -Verbose:$false
 Import-Module AzureRM.OperationalInsights -ErrorAction stop -Verbose:$false
 
 #
@@ -63,10 +71,11 @@ $sharedKey = $workspaceKeys.PrimarySharedKey
 Write-Verbose "- list of tags to be added to the logfile:"
 $tagnameList -join ', ' | Write-Verbose
 if (-not $subscriptionIDList) {
-    Write-Verbose "- using default subscription."
+    Write-Verbose "- using default subscription of the automation account."
     $subscriptionIDList = @([guid](Get-AzureRmContext).Subscription.Id)
 }
 Write-Verbose "- Preparing to write data to log $($logName)."
+Write-Verbose "- Add VM status details: $AddVmDetails"
 Write-verbose "- looping over subscription(s)."
 foreach ($subscriptionID in $subscriptionIDlist)
 {
@@ -106,8 +115,20 @@ foreach ($subscriptionID in $subscriptionIDlist)
         #
         # get all the child objects and add the RG reference
         #
-        Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName -PipelineVariable resource | ForEach-Object {
-            $record = [pscustomobject]@{
+        # Start by getting all resources in the RG, and the VM details as well if needed
+        #
+        $objectsInRg = @(Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName)
+        if ($AddVmDetails)
+        {
+            $vmList = get-azurermvm -ResourceGroupName $rg.ResourceGroupName -Status
+        }
+
+        #
+        # create the output object, add information as required.
+        #
+        foreach ($resource in $objectsInRg)
+        {
+             $record = [pscustomobject]@{
                 SubscriptionId = $subscriptionId.ToString()
                 SubscriptionName = $context.SubscriptionName
                 ResourceGroupName = $rg.ResourceGroupName
@@ -118,6 +139,24 @@ foreach ($subscriptionID in $subscriptionIDlist)
             foreach ($tagname in $tagnameList)
             {
                 $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
+            }
+
+            #
+            # Add VM details to the existing object if there exists such a VM.
+            #
+            if ($AddVmDetails)
+            {
+                $vm = $null
+                $OSType = $null
+                $powerState = $null
+                $vm = $vmList | Where-Object id -eq $resource.id                
+                if ($vm)
+                {
+                    $OSType = $vm.StorageProfile.OsDisk.OsType
+                    $powerState = $vm.PowerState
+                }
+                $record | Add-Member -MemberType NoteProperty -Name "OSType" -Value $OSType
+                $record | Add-Member -MemberType NoteProperty -Name "PowerState" -Value $powerState
             }
             $resourceList += $record
             $objectCount++
@@ -136,6 +175,8 @@ foreach ($subscriptionID in $subscriptionIDlist)
             try {
                 Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
             } catch {
+                $ErrorMessage = $_.Exception.Message
+                throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
             }
             $resourceList = @()
             $batchCount = 0    
