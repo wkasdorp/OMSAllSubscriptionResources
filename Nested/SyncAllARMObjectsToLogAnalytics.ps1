@@ -1,11 +1,11 @@
 # Get information required for the automation account from parameter values when the runbook is started.
 Param
 (
-    # target Log Analytics workspace
+    # target Log Analytics workspace. 
     [Parameter(Mandatory = $True)]
     [string]$workspacename,
 
-    # name of the custom log where data is written.
+    # The _case sensitive_ name of the custom log where data is written.
     [Parameter(Mandatory = $True)]
     [string]$logName,
     
@@ -98,7 +98,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         #
         $record = [pscustomobject]@{
             SubscriptionId = $subscriptionId.ToString()
-            SubscriptionName = $context.SubscriptionName
+            SubscriptionName = $context.Subscription.Name
             ResourceGroupName = $rg.ResourceGroupName
             Name = $rg.ResourceGroupName
             Location = $rg.Location
@@ -107,6 +107,11 @@ foreach ($subscriptionID in $subscriptionIDlist)
         foreach ($tagname in $tagnameList)
         {
             $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
+        }
+        if ($AddVmDetails)
+        {
+            $record | Add-Member -MemberType NoteProperty -Name "OSType" -Value ""
+            $record | Add-Member -MemberType NoteProperty -Name "PowerState" -Value ""
         }
         $resourceList += $record
         $objectCount++
@@ -130,7 +135,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         {
              $record = [pscustomobject]@{
                 SubscriptionId = $subscriptionId.ToString()
-                SubscriptionName = $context.SubscriptionName
+                SubscriptionName = $context.Subscription.Name
                 ResourceGroupName = $rg.ResourceGroupName
                 Name = $resource.Name
                 Location = $resource.Location
@@ -147,13 +152,13 @@ foreach ($subscriptionID in $subscriptionIDlist)
             if ($AddVmDetails)
             {
                 $vm = $null
-                $OSType = $null
-                $powerState = $null
+                $OSType = ""
+                $powerState = ""
                 $vm = $vmList | Where-Object id -eq $resource.id                
                 if ($vm)
                 {
-                    $OSType = $vm.StorageProfile.OsDisk.OsType
-                    $powerState = $vm.PowerState
+                    $OSType = [string]$vm.StorageProfile.OsDisk.OsType
+                    $powerState = [string]$vm.PowerState
                 }
                 $record | Add-Member -MemberType NoteProperty -Name "OSType" -Value $OSType
                 $record | Add-Member -MemberType NoteProperty -Name "PowerState" -Value $powerState
