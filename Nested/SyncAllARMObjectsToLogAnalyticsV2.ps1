@@ -1,6 +1,6 @@
 Param
 (
-    # target Log Analytics workspace. 
+    # target Log Analytics workspace. Must be in the default subscription
     [Parameter(Mandatory = $True)]
     [string]$workspacename,
 
@@ -213,9 +213,7 @@ Function Send-OMSAPIIngestionFile
 }
 #endregion
 
-#region additional functions to call REST
-
-#region additional functions to call REST
+#region  Get-LogAnalyticsWorkSpaceKeys
 function Get-LogAnalyticsWorkSpaceKeys {
     param($SubscriptionId, $workspaceName)
 
@@ -258,22 +256,20 @@ function Get-LogAnalyticsWorkSpaceKeys {
     } 
 
     #
-    # the RG and name of the workspace are packed into a url. I cannot (quickly) see better way so I'll just parse it out.
+    # get the correct workspace, its rg and customer ID.
     #
     $rg = ""
-    $result.value.properties | ForEach-Object {
-        if ($_.portalurl -match "%2fresourcegroups%2f(.*)%2fproviders%2f.*%2f$($workspaceName)`$")
-        {
-            if ($rg) {
-                throw "more than one match for workspace $workspacename"
-            }
-            $rg = $matches[1]
-            Write-Verbose "- Found workspace '$workspaceName'"
-        }
+    $workspace = $result.value | Where-Object name -eq $workspaceName
+    if (-not $workspace) 
+    {
+       throw "Could not find workspace $workspaceName"
     }
+    $customerID = $workspace.properties.customerID
+    $workspace.id -match 'resourcegroups/(.*)/providers' | Out-Null
+    $rg = $Matches[1]
     if (-not $rg)
     {
-        throw "Could not find workspace $workspaceName"
+        throw "Could not resolve Resource Group somehow"
     }
 
     # Now we have the subscription, RG and workspace name, get the keys.     #
@@ -302,9 +298,9 @@ function Get-LogAnalyticsWorkSpaceKeys {
     }
 
     #
-    # [pscustomobject] @{ primarySharedKey = <key1>, secondarySharedKey = <key2> }
+    # [pscustomobject] @{ primarySharedKey = <key1>, secondarySharedKey = <key2>, customerID = <>id }
     #
-    return $result 
+    return $result | Add-Member -MemberType NoteProperty -Name customerId -Value $customerID -PassThru
 }
 #endregion
 
@@ -322,18 +318,9 @@ Connect-AzureRmAccount `
 
 Write-Verbose "- Authentication succeeded. "
 Write-Verbose "- getting Log Analytics workspace $($workspacename) and its key using REST API calls."
-<#
-$workspace = Get-AzureRmOperationalInsightsWorkspace -ErrorAction stop | Where-Object name -eq $workspacename
-if (-not $workspace)
-{ 
-    throw "could not find workspace $workspacename"
-}
-$workspaceKeys = $workspace | Get-AzureRmOperationalInsightsWorkspaceSharedKeys -ErrorAction Stop
-$customerId = $workspace.CustomerId
+$workspaceKeys = Get-LogAnalyticsWorkSpaceKeys -SubscriptionId (Get-AzureRmContext).Subscription.id -workspaceName $workspacename
+$customerId = $workspaceKeys.customerId
 $sharedKey = $workspaceKeys.PrimarySharedKey
-#>
-
-
 
 #
 # loop over subscriptions
