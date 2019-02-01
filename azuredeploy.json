@@ -2,87 +2,37 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "workspaceName": {
-      "type": "string",
-      "metadata": {
-        "Description": "Name of existing Log Analytics workspace."
-      }
-    },
-    "workspaceResourceGroup":  {
-      "type": "string",
-      "metadata": {
-        "Description": "Resource Group of workspace."
-      }
-    },
     "accountName": {
       "type": "string",
       "metadata": {
         "Description": "Name of existing Automation Account."
       }
     },
-    "regionId": {
+    "RunbookName": {
       "type": "string",
-      "defaultValue": "[resourceGroup().location]",
+      "defaultValue": "SyncAllARMObjectsToLogAnalytics",
       "metadata": {
-        "Description": "Region of Automation account."
+        "Description": "Name of the runbook that will sync ARM objects."
       }
     }
   },
   "variables": {
-    "SolutionName": "SyncARMObjects",
-    "SolutionVersion": "0.1",
-    "SolutionPublisher": "Sol Solutions",
-    "ProductName": "Sync Engine",
-
-    "LogAnalyticsApiVersion": "2015-11-01-preview",
     "AutomationApiVersion": "2015-10-31",
 
     "Runbook": {
-      "Name": "SyncAllARMObjectsToLogAnalytics",
+      "Name": "[parameters('RunbookName')]",
       "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
       "Type": "PowerShell",
       "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1"
-    },
-    "Module": {
-      "Name": "OMSIngestionAPI",
-      "Uri": "https://devopsgallerystorage.blob.core.windows.net/packages/omsingestionapi.1.6.0.nupkg"
     }
   },
   "resources": [
-    {
-      "name": "[concat(variables('SolutionName'), '[' ,parameters('workspacename'), ']')]",
-      "location": "[parameters('regionID')]",
-      "tags": { },
-      "type": "Microsoft.OperationsManagement/solutions",
-      "apiVersion": "[variables('LogAnalyticsApiVersion')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Automation/automationAccounts/runbooks/', parameters('accountName'), variables('Runbook').Name)]",
-        "[resourceId('Microsoft.Automation/automationAccounts/modules/', parameters('accountName'), variables('Module').Name)]"
-      ],
-      "properties": {
-        "workspaceResourceId": "[resourceId(parameters('workspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]",
-        "referencedResources": [
-          "[resourceId('Microsoft.Automation/automationAccounts/modules/', parameters('accountName'), variables('Module').Name)]"
-        ],
-        "containedResources": [
-          "[resourceId('Microsoft.Automation/automationAccounts/runbooks/', parameters('accountName'), variables('Runbook').Name)]"
-        ]
-      },
-      "plan": {
-        "name": "[concat(variables('SolutionName'), '[' ,parameters('workspaceName'), ']')]",
-        "Version": "[variables('SolutionVersion')]",
-        "product": "[variables('ProductName')]",
-        "publisher": "[variables('SolutionPublisher')]",
-        "promotionCode": ""
-      }
-    },
     {
       "name": "[concat(parameters('accountName'), '/', variables('Runbook').Name)]",
       "type": "Microsoft.Automation/automationAccounts/runbooks",
       "apiVersion": "[variables('AutomationApiVersion')]",
       "dependsOn": [
       ],
-      "location": "[parameters('regionId')]",
       "tags": { },
       "properties": {
         "runbookType": "[variables('Runbook').Type]",
@@ -92,18 +42,6 @@
         "publishContentLink": {
           "uri": "[variables('Runbook').Uri]",
           "version": "1.0.0.0"
-        }
-      }
-    },
-    {
-      "name": "[concat(parameters('accountName'), '/', variables('Module').Name)]",
-      "type": "Microsoft.Automation/automationAccounts/modules",
-      "apiVersion": "[variables('AutomationApiVersion')]",
-      "dependsOn": [
-      ],
-      "properties": {
-        "contentLink": {
-          "uri": "[variables('Module').Uri]"
         }
       }
     }
