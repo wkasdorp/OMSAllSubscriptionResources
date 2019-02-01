@@ -42,7 +42,7 @@
         "WorkspaceName": "wk-oms2"
       }
     },
-    "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'))]",
+    "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'),parameters('StartOfSchedule'))]",
     "Schedule": {
       "Name": "Daily_4x",
       "Description": "Trigger four times per day",
