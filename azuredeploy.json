@@ -25,7 +25,7 @@
     "StartOfSchedule": {
       "type": "string",
       "metadata": {
-        "description": "Start of schedule, MUST be in the future. Example format: 1/1/2019 12:00:00"
+        "description": "Start of schedule, MUST be in the future, timezone UTC. Example format: 1/1/2019 12:00:00"
       }
     }
   },
@@ -36,7 +36,13 @@
       "Name": "[parameters('RunbookName')]",
       "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
       "Type": "PowerShell",
-      "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1"
+      "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1",
+      "Parameters": {
+        "LogName" : "WKLog6",
+        "WorkspaceName": "wk-oms2",
+        "subscriptionIDList": ["4d0761b7-6383-47c3-8398-0fb138fb4b46","0568048c-62e3-485e-bc1b-156f2867e43c"],
+        "tagNameList": ["owner","bo-number"]
+      }
     },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'))]",
     "Schedule": {
@@ -103,7 +109,8 @@
         },
         "runbook": {
           "name": "[variables('Runbook').Name]"
-        }
+        },
+        "parameters": "[variables('Runbook').Parameters]"
       }
     }
   ],
