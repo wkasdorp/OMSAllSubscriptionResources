@@ -31,6 +31,17 @@
       "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
       "Type": "PowerShell",
       "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1"
+    },
+    "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'))]",
+    "Schedule": {
+      "Name": "Daily_4x",
+      "Description": "Trigger four times per day",
+      "IsEnabled": "true",
+      "Interval": "4",
+      "Frequency": "hour",
+      "StartTime": "1/1/2019 12:00:00",
+      "TimeZone": "UTC",
+      "LinkGuid": "[variables('scheduleLinkGuid')]"
     }
   },
   "resources": [
@@ -50,6 +61,42 @@
         "publishContentLink": {
           "uri": "[variables('Runbook').Uri]",
           "version": "1.0.0.0"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('accountName'), '/', variables('Schedule').Name)]",
+      "type": "microsoft.automation/automationAccounts/schedules",
+      "apiVersion": "[variables('AutomationApiVersion')]",
+      "tags": { },
+      "dependsOn": [
+      ],
+      "properties": {
+        "description": "[variables('Schedule').Description]",
+        "startTime": "[variables('Schedule').StartTime]",
+        "timeZone": "[variables('Schedule').TimeZone]",
+        "isEnabled": "[variables('Schedule').IsEnabled]",
+        "interval": "[variables('Schedule').Interval]",
+        "frequency": "[variables('Schedule').Frequency]"
+      }
+    },
+    {
+      "name": "[concat(parameters('accountName'), '/', variables('Schedule').LinkGuid)]",
+      "type": "microsoft.automation/automationAccounts/jobSchedules",
+      "apiVersion": "[variables('AutomationApiVersion')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Automation/automationAccounts/runbooks/', parameters('accountName'), variables('Runbook').Name)]",
+        "[resourceId('Microsoft.Automation/automationAccounts/schedules/', parameters('accountName'), variables('Schedule').Name)]"
+      ],
+      "tags": {
+      },
+      "properties": {
+        "schedule": {
+          "name": "[variables('Schedule').Name]"
+        },
+        "runbook": {
+          "name": "[variables('Runbook').Name]"
         }
       }
     }
