@@ -8,6 +8,13 @@
         "Description": "Name of existing Automation Account."
       }
     },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "Description": "Region of Automation account."
+      }
+    },
     "RunbookName": {
       "type": "string",
       "defaultValue": "SyncAllARMObjectsToLogAnalytics",
@@ -33,6 +40,7 @@
       "apiVersion": "[variables('AutomationApiVersion')]",
       "dependsOn": [
       ],
+      "location": "[parameters('location')]",
       "tags": { },
       "properties": {
         "runbookType": "[variables('Runbook').Type]",
