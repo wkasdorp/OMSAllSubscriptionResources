@@ -33,14 +33,14 @@
     "AutomationApiVersion": "2015-10-31",
     "subscriptionList": [
       "[[",
-      "\"4d0761b7-6383-47c3-8398-0fb138fb4b46\"",
-      "\"0568048c-62e3-485e-bc1b-156f2867e43c\"",
+      "4d0761b7-6383-47c3-8398-0fb138fb4b46",
+      "0568048c-62e3-485e-bc1b-156f2867e43c",
       "]"
     ],
     "tagList": [
       "[[",
-      "\"owner\"",
-      "\"bo-number\"",
+      "owner",
+      "bo-number",
       "]"
     ],
     "Runbook": {
