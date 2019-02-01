@@ -21,6 +21,12 @@
       "metadata": {
         "Description": "Name of the runbook that will sync ARM objects."
       }
+    },
+    "StartOfSchedule": {
+      "type": "string",
+      "metadata": {
+        "description": "Start of schedule, MUST be in the future. Example format: 1/1/2019 12:00:00"
+      }
     }
   },
   "variables": {
@@ -39,7 +45,7 @@
       "IsEnabled": "true",
       "Interval": "4",
       "Frequency": "hour",
-      "StartTime": "1/1/2019 12:00:00",
+      "StartTime": "[parameters('StartOfSchedule')]",
       "TimeZone": "UTC",
       "LinkGuid": "[variables('scheduleLinkGuid')]"
     }
