@@ -61,12 +61,12 @@
         "SubscriptionList" : "[parameters('SubscriptionIdList')]",
         "TageNameList": "[parameters('TagNameList')]"
       },
-      "ParameteresUnused": {
+      "ParametersUnused": {
         "UnusedsubscriptionIDList":  "[[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]",
         "UnusedtagNameList": "[[\"owner\",\"bo-number\"]"
       }
     },
-    "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'),parameters('StartOfSchedule'))]",
+    "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "Schedule": {
       "Name": "Daily_4x",
       "Description": "Trigger four times per day",
