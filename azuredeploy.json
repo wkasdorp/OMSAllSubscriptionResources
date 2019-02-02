@@ -63,8 +63,8 @@
       "Type": "PowerShell",
       "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1",
       "Parameters": {
-        "LogName" : "[parameters('TargetLogName')",
-        "WorkspaceName": "[parameters('WorkSpaceName')",
+        "LogName" : "[parameters('TargetLogName')]",
+        "WorkspaceName": "[parameters('WorkSpaceName')]",
         "SubscriptionList" : "[parameters('SubscriptionIdList')]",
         "TageNameList": "[parameters('TagNameList')]"
       },
