@@ -28,6 +28,20 @@
         "description": "Start of schedule, MUST be in the future, timezone UTC. Example format: 1/1/2019 12:00:00"
       }
     },
+    "TargetLogName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the target logfile name in Log Analytics (case sensitive!)"
+      },
+      "defaultValue": "WKLog6"
+    },
+    "WorkSpaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Log Analytics Workspace Name, should be in the same subscription as the Resource Group."
+      },
+      "defaultValue": "wk-oms2"
+    },
     "SubscriptionIdList": {
       "type": "string",
       "metadata": {
@@ -49,10 +63,12 @@
       "Type": "PowerShell",
       "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1",
       "Parameters": {
-        "LogName" : "WKLog6",
-        "WorkspaceName": "wk-oms2",
+        "LogName" : "[parameters('TargetLogName')",
+        "WorkspaceName": "[parameters('WorkSpaceName')",
         "SubscriptionList" : "[parameters('SubscriptionIdList')]",
-        "TageNameList": "[parameters('TagNameList')]",
+        "TageNameList": "[parameters('TagNameList')]"
+      },
+      "ParameteresUnused": {
         "UnusedsubscriptionIDList":  "[[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]",
         "UnusedtagNameList": "[[\"owner\",\"bo-number\"]"
       }
