@@ -33,14 +33,14 @@
       "metadata": {
         "description": "List of subscription IDs to be scanned."
       },
-      "defaultValue": "[[U00224d0761b7-6383-47c3-8398-0fb138fb4b46U0022,U00220568048c-62e3-485e-bc1b-156f2867e43cU0022]"
+      "defaultValue": "[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]"
     },
     "TagNameList": {
       "type": "string",
       "metadata": {
         "description": "List of tags to be retrieved."
       },
-      "defaultValue": "[[U0022ownerU0022,U0022bo-numberU0022]"
+      "defaultValue": "[\"owner\",\"bo-number\"]"
     }    
   },
   "variables": {
