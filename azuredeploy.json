@@ -27,18 +27,30 @@
       "metadata": {
         "description": "Start of schedule, MUST be in the future, timezone UTC. Example format: 1/1/2019 12:00:00"
       }
-    }
+    },
+    "SubscriptionIdList": {
+      "type": "array",
+      "metadata": {
+        "description": "List of subscription IDs to be scanned."
+      },
+      "defaultvalue": [
+        "4d0761b7-6383-47c3-8398-0fb138fb4b46",
+        "0568048c-62e3-485e-bc1b-156f2867e43c"
+      ]
+    },
+    "TagNameList": {
+      "type": "array",
+      "metadata": {
+        "description": "List of tags to be retrieved."
+      },
+      "defaultvalue": [
+        "owner",
+        "bo-number"
+      ]
+    }    
   },
   "variables": {
     "AutomationApiVersion": "2015-10-31",
-    "subscriptionList": [
-      "4d0761b7-6383-47c3-8398-0fb138fb4b46",
-      "0568048c-62e3-485e-bc1b-156f2867e43c"
-    ],
-    "tagList": [
-      "owner",
-      "bo-number"
-    ],
     "Runbook": {
       "Name": "[parameters('RunbookName')]",
       "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
@@ -47,8 +59,10 @@
       "Parameters": {
         "LogName" : "WKLog6",
         "WorkspaceName": "wk-oms2",
-        "subscriptionIDList":  "[[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]",
-        "tagNameList": "[[\"owner\",\"bo-number\"]"
+        "SubscriptionList" : "[parameters('SubscriptionIdList')]",
+        "TageNameList": "[parameters('TagNameList')]",
+        "UnusedsubscriptionIDList":  "[[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]",
+        "UnusedtagNameList": "[[\"owner\",\"bo-number\"]"
       }
     },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),parameters('RunbookName'),parameters('StartOfSchedule'))]",
