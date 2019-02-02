@@ -15,13 +15,6 @@
         "Description": "Region of Automation account."
       }
     },
-    "RunbookName": {
-      "type": "string",
-      "defaultValue": "SyncAllARMObjectsToLogAnalytics",
-      "metadata": {
-        "Description": "Name of the runbook that will sync ARM objects."
-      }
-    },
     "StartOfSchedule": {
       "type": "string",
       "metadata": {
@@ -58,10 +51,10 @@
   "variables": {
     "AutomationApiVersion": "2015-10-31",
     "Runbook": {
-      "Name": "[parameters('RunbookName')]",
+      "Name": "SyncAllARMObjectsToLogAnalyticsV2",
       "Description": "Sync all ARM objects for a given subscription to Log Analytics.",
       "Type": "PowerShell",
-      "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalytics.ps1",
+      "Uri": "https://raw.githubusercontent.com/wkasdorp/OMSAllSubscriptionResources/master/Nested/SyncAllARMObjectsToLogAnalyticsV2.ps1",
       "Parameters": {
         "LogName" : "[parameters('TargetLogName')]",
         "WorkspaceName": "[parameters('WorkSpaceName')]",
