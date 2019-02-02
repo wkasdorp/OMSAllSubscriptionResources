@@ -44,7 +44,7 @@ $VerbosePreference="continue"
 
 #region Cloned Module https://www.powershellgallery.com/packages/OMSIngestionAPI/1.6.0
 # Needed to avoid having to add modules to the automation account.  
-# renamed function to avoid potential conflicts.
+# renamed function to avoid potential conflicts, added some error checking.
 
 #PowerShell Module leveraged for ingesting data into Log Analytics API ingestion point
 <# 
@@ -137,7 +137,7 @@ Function Get-OMSAPISignatureCloned
         } 
         $table = $table += $sx 
     } 
-    Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey `
+    Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey `
      -body $jsonTable -logType $logType -TimeStampField $Timestampfield 
  
 .PARAMETER EnvironmentName 
@@ -145,7 +145,7 @@ Function Get-OMSAPISignatureCloned
     when calling this function, ingestion will go to an Azure Government Log Analytics 
     workspace. Otherwise, Azure Commercial endpoint is leveraged by default. 
 #>
-Function Send-OMSAPIIngestionFile
+Function Send-OMSAPIIngestionFileCloned
 {
     Param
     (
@@ -209,7 +209,10 @@ Function Send-OMSAPIIngestionFile
     
     if ($response.StatusCode -ge 200 -and $response.StatusCode -le 299)
     {
-        write-output 'Accepted'
+        Write-Verbose "Send-OMSAPIINgestionFile: Invoke-WebRequest accepted (status $($response.StatusCode))"
+    } else {
+        $badStatus = $response.StatusCode
+        throw "Send-OMSAPIINgestionFile: Invoke-WebRequest returned '$badStatus'"
     }
 }
 #endregion
@@ -436,7 +439,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
             Write-Verbose "--- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
             $body = $resourceList | ConvertTo-Json
             try {
-                Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
+                Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
             } catch {
                 $ErrorMessage = $_.Exception.Message
                 throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
@@ -453,7 +456,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
     {
         Write-Verbose "--- Flushing final $batchCount objects to the workspace. Total object count: $objectCount"
         $body = $resourceList | ConvertTo-Json
-        Send-OMSAPIIngestionFile -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
+        Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
     }
     Write-Verbose "-- Wrote $objectCount objects for subscription '$($context.Subscription.Name)'"
 }
