@@ -32,10 +32,9 @@ $batchSize = 1000
 # import modules before we start verbose mode... The OMS one is not present in the account by default. 
 #
 $VerbosePreference="silentlycontinue"
-Import-Module AzureRM.Profile -Verbose:$false
-Import-Module AzureRM.Resources -Verbose:$false
-Import-Module AzureRM.Compute -Verbose:$false
-Import-Module AzureRM.OperationalInsights -ErrorAction stop -Verbose:$false
+Import-Module AzureRM.Profile
+Import-Module AzureRM.Resources 
+Import-Module AzureRM.Compute 
 
 #
 # Logging on/off
@@ -44,6 +43,8 @@ $VerbosePreference="continue"
 
 
 #region Cloned Module https://www.powershellgallery.com/packages/OMSIngestionAPI/1.6.0
+# Needed to avoid having to add modules to the automation account.  
+# renamed function to avoid potential conflicts.
 
 #PowerShell Module leveraged for ingesting data into Log Analytics API ingestion point
 <# 
@@ -70,7 +71,7 @@ $VerbosePreference="continue"
 .PARAMETER resource 
     Path to send the logs for ingestion to the rest endpoint 
 #>
-Function Get-OMSAPISignature
+Function Get-OMSAPISignatureCloned
 {
     Param
     (
@@ -164,7 +165,7 @@ Function Send-OMSAPIIngestionFile
     $resource = "/api/logs"
     $rfc1123date = [DateTime]::UtcNow.ToString("r")
     $contentLength = $body.Length
-    $signature = Get-OMSAPISignature `
+    $signature = Get-OMSAPISignatureCloned `
      -customerId $customerId `
      -sharedKey $sharedKey `
      -date $rfc1123date `
