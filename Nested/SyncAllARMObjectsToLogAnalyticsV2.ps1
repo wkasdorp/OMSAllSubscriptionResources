@@ -48,7 +48,7 @@ $VerbosePreference="continue"
 Write-Verbose "- workspacename          : $workspacename"
 Write-Verbose "- logname                : $logName"
 Write-Verbose "- subscriptionIdList     : "
-$subscriptionIDList | ForEach-Object { Write-Verbose "-- $($_.ToString())" }
+$subscriptionIDList | ForEach-Object { Write-Verbose "-- $($_.Guid)" }
 Write-Verbose "- tagNameList            : $($tagnameList -join ', ')"
 Write-Verbose "- AddVmDetails           : $addVmDetails"
 Write-Verbose "- runNumberVariableName  : $runNumberVariableName"

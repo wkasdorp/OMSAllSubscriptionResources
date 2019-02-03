@@ -26,7 +26,7 @@
       "metadata": {
         "description": "Name of the target logfile name in Log Analytics (case sensitive!)"
       },
-      "defaultValue": "WKLog7"
+      "defaultValue": "WKLog9"
     },
     "WorkSpaceName": {
       "type": "string",
@@ -59,7 +59,7 @@
         "LogName" : "[parameters('TargetLogName')]",
         "WorkspaceName": "[parameters('WorkSpaceName')]",
         "SubscriptionList" : "[parameters('SubscriptionIdList')]",
-        "TageNameList": "[parameters('TagNameList')]"
+        "TagNameList": "[parameters('TagNameList')]"
       },
       "ParametersUnused": {
         "UnusedsubscriptionIDList":  "[[\"4d0761b7-6383-47c3-8398-0fb138fb4b46\",\"0568048c-62e3-485e-bc1b-156f2867e43c\"]",
