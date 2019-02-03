@@ -20,16 +20,19 @@ Param
     
     # add some VM details: OStype, Powerstate
     [Parameter(Mandatory = $false)]
-    [bool]$AddVmDetails = $false
+    [bool]$AddVmDetails = $false,
+
+    # runcounter Automation Variable Name. This is useful for queries where you want to grab all objects
+    # that were present during a given run, but not anything else. 
+    [Parameter(Mandatory = $false)]
+    [sting]$runNumberVariableName = "SyncRunNumber"
 )
 
-#
-# maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects.
-#
+# maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
 $batchSize = 1000
 
 #
-# import modules before we start verbose mode... The OMS one is not present in the account by default. 
+# import modules before we start verbose mode... 
 #
 $VerbosePreference="silentlycontinue"
 Import-Module AzureRM.Profile
@@ -41,6 +44,13 @@ Import-Module AzureRM.Compute
 #
 $VerbosePreference="continue"
 
+Write-Verbose "- workspacename          : $workspacename"
+Write-Verbose "- logname                : $logName"
+Write-Verbose "- subscriptionIdList     : "
+$subscriptionIDList | ForEach-Object { Write-Verbose "-- $_" }
+Write-Verbose "- tagNameList            : " + $($tagnameList -join ', ')
+Write-Verbose "- AddVmDetails           : $addVmDetails"
+Write-Verbose "- runNumberVariableName  : $runNumberVariableName"
 
 #region Cloned Module https://www.powershellgallery.com/packages/OMSIngestionAPI/1.6.0
 # Needed to avoid having to add modules to the automation account.  
@@ -308,6 +318,7 @@ function Get-LogAnalyticsWorkSpaceKeys {
 }
 #endregion
 
+#region Authentication and Keys
 # Authenticate to the Automation account using the Azure connection created when the Automation account was created.
 # Code copied from the runbook AzureAutomationTutorial.
 $connectionName = "AzureRunAsConnection"
@@ -325,18 +336,23 @@ Write-Verbose "- getting Log Analytics workspace $($workspacename) and its key u
 $workspaceKeys = Get-LogAnalyticsWorkSpaceKeys -SubscriptionId (Get-AzureRmContext).Subscription.id -workspaceName $workspacename
 $customerId = $workspaceKeys.customerId
 $sharedKey = $workspaceKeys.PrimarySharedKey
+#endregion
+
+#
+# get and increase the runnumber.
+#
+$runNumber = Get-AzureAutomationVariable -Name $runNumberVariableName
+Write-Verbose "- Current run number: $runNumber"
+Set-AzureAutomationVariable -Name $runNumberVariableName -Value $($runNumber + 1)
 
 #
 # loop over subscriptions
 #
-Write-Verbose "- list of tags to be added to the logfile:"
-$tagnameList -join ', ' | Write-Verbose
 if (-not $subscriptionIDList) {
     Write-Verbose "- using default subscription of the automation account."
     $subscriptionIDList = @([guid](Get-AzureRmContext).Subscription.Id)
 }
 Write-Verbose "- Preparing to write data to log $($logName)."
-Write-Verbose "- Add VM status details: $AddVmDetails"
 Write-verbose "- looping over subscription(s)."
 foreach ($subscriptionID in $subscriptionIDlist)
 {
@@ -358,6 +374,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         # first, get the RG details and add that to the output records.
         #
         $record = [pscustomobject]@{
+            RunNumber = $runNumber
             SubscriptionId = $subscriptionId.ToString()
             SubscriptionName = $context.Subscription.Name
             ResourceGroupName = $rg.ResourceGroupName
@@ -395,6 +412,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         foreach ($resource in $objectsInRg)
         {
              $record = [pscustomobject]@{
+                RunNumber = $runNumber
                 SubscriptionId = $subscriptionId.ToString()
                 SubscriptionName = $context.Subscription.Name
                 ResourceGroupName = $rg.ResourceGroupName
@@ -431,8 +449,8 @@ foreach ($subscriptionID in $subscriptionIDlist)
         
         #
         # if we reach or exceed the batch size, flush. Note that resourceList at least contains the
-        # full count of the objects in the resource group. Since the maximum objects in an RG is 800, the total count
-        # can reach at least 1600 before flushing (current RG plus the previous one.).
+        # full count of the objects in the resource group. Since the maximum objects in an RG is 900, the total count
+        # can reach at least 1800 before flushing (current RG plus the previous one.).
         #
         if ($batchCount -ge $batchSize)
         {
@@ -458,5 +476,5 @@ foreach ($subscriptionID in $subscriptionIDlist)
         $body = $resourceList | ConvertTo-Json
         Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
     }
-    Write-Verbose "-- Wrote $objectCount objects for subscription '$($context.Subscription.Name)'"
+    Write-Verbose "-- Wrote total $objectCount objects for subscription '$($context.Subscription.Name)'"
 }

@@ -26,7 +26,7 @@
       "metadata": {
         "description": "Name of the target logfile name in Log Analytics (case sensitive!)"
       },
-      "defaultValue": "WKLog6"
+      "defaultValue": "WKLog7"
     },
     "WorkSpaceName": {
       "type": "string",
@@ -66,12 +66,19 @@
         "UnusedtagNameList": "[[\"owner\",\"bo-number\"]"
       }
     },
+    "Variable": {
+      "Name": "SyncRunNumber",
+      "Description": "#times runbook has run. Useful to get all resources that were present at that time.",
+      "Encrypted": 0,
+      "Type": "Integer",
+      "Value": "0"
+    },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "Schedule": {
       "Name": "Daily_4x",
       "Description": "Trigger four times per day",
       "IsEnabled": "true",
-      "Interval": "4",
+      "Interval": "6",
       "Frequency": "hour",
       "StartTime": "[parameters('StartOfSchedule')]",
       "TimeZone": "CET",
@@ -86,7 +93,6 @@
       "dependsOn": [
       ],
       "location": "[parameters('location')]",
-      "tags": { },
       "properties": {
         "runbookType": "[variables('Runbook').Type]",
         "logProgress": "true",
@@ -99,10 +105,22 @@
       }
     },
     {
+      "name": "[concat(parameters('accountName'), '/', variables('Variable').Name)]",
+      "type": "microsoft.automation/automationAccounts/variables",
+      "apiVersion": "[variables('AutomationApiVersion')]",
+      "dependsOn": [
+      ],
+      "properties": {
+        "description": "[variables('Variable').Description]",
+        "isEncrypted": "[variables('Variable').Encrypted]",
+        "type": "[variables('Variable').Type]",
+        "value": "[variables('Variable').Value]"
+      }
+    },
+    {
       "name": "[concat(parameters('accountName'), '/', variables('Schedule').Name)]",
       "type": "microsoft.automation/automationAccounts/schedules",
       "apiVersion": "[variables('AutomationApiVersion')]",
-      "tags": { },
       "dependsOn": [
       ],
       "properties": {
