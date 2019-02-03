@@ -25,7 +25,7 @@ Param
     # runcounter Automation Variable Name. This is useful for queries where you want to grab all objects
     # that were present during a given run, but not anything else. 
     [Parameter(Mandatory = $false)]
-    [sting]$runNumberVariableName = "SyncRunNumber"
+    [string]$runNumberVariableName = "SyncRunNumber"
 )
 
 # maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
