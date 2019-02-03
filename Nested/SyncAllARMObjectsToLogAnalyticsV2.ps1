@@ -20,7 +20,7 @@ Param
     
     # add some VM details: OStype, Powerstate
     [Parameter(Mandatory = $false)]
-    [bool]$AddVmDetails = $false,
+    [bool]$AddVmDetails = $true,
 
     # runcounter Automation Variable Name. This is useful for queries where you want to grab all objects
     # that were present during a given run, but not anything else. 
