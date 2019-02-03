@@ -83,6 +83,13 @@
       "StartTime": "[parameters('StartOfSchedule')]",
       "TimeZone": "CET",
       "LinkGuid": "[variables('scheduleLinkGuid')]"
+    },
+    "RunOnceScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),'RunOnce',variables('Runbook').Name,parameters('StartOfSchedule'))]",
+    "RunOnceSchedule": {
+      "Name": "RunOnce",
+      "Description": "Run immediately after provisioning",
+      "IsEnabled": "true",
+      "LinkGuid": "[variables('RunOnceScheduleLinkGUID')]"
     }
   },
   "resources": [
@@ -146,6 +153,40 @@
       "properties": {
         "schedule": {
           "name": "[variables('Schedule').Name]"
+        },
+        "runbook": {
+          "name": "[variables('Runbook').Name]"
+        },
+        "parameters": "[variables('Runbook').Parameters]"
+      }
+    },
+    {
+      "name": "[concat(parameters('accountName'), '/', variables('RunOnceSchedule').Name)]",
+      "type": "microsoft.automation/automationAccounts/schedules",
+      "apiVersion": "[variables('AutomationApiVersion')]",
+      "dependsOn": [
+      ],
+      "properties": {
+        "description": "[variables('RunOnceSchedule').Description]",
+        "isEnabled": "[variables('RunOnceSchedule').IsEnabled]",
+        "frequency": "OneTime",
+        "interval": null
+      }
+    },
+    {
+      "name": "[concat(parameters('accountName'), '/', variables('RunOnceSchedule').LinkGuid)]",
+      "type": "microsoft.automation/automationAccounts/jobSchedules",
+      "apiVersion": "[variables('AutomationApiVersion')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Automation/automationAccounts/runbooks/', parameters('accountName'), variables('Runbook').Name)]",
+        "[resourceId('Microsoft.Automation/automationAccounts/schedules/', parameters('accountName'), variables('RunOnceSchedule').Name)]"
+      ],
+      "tags": {
+      },
+      "properties": {
+        "schedule": {
+          "name": "[variables('RunOnceSchedule').Name]"
         },
         "runbook": {
           "name": "[variables('Runbook').Name]"
