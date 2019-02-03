@@ -87,7 +87,7 @@
     "RunOnceScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),'RunOnce',variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "RunOnceSchedule": {
       "Name": "RunOnce",
-      "Description": "Run immediately after provisioning",
+      "Description": "Runs once, 5 minutes after provisioning",
       "IsEnabled": "true",
       "LinkGuid": "[variables('RunOnceScheduleLinkGUID')]"
     }
