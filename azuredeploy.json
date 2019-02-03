@@ -75,7 +75,7 @@
     },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "Schedule": {
-      "Name": "Daily_4x",
+      "Name": "Sync_Daily_4x",
       "Description": "Trigger four times per day",
       "IsEnabled": "true",
       "Interval": "6",
@@ -86,9 +86,10 @@
     },
     "RunOnceScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),'RunOnce',variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "RunOnceSchedule": {
-      "Name": "RunOnce",
+      "Name": "Sync_RunOnce",
       "Description": "Runs once, 5 minutes after provisioning",
       "IsEnabled": "true",
+      "TimeZone": "CET",
       "LinkGuid": "[variables('RunOnceScheduleLinkGUID')]"
     }
   },

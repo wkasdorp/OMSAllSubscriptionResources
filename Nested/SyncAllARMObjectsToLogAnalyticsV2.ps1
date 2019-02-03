@@ -38,6 +38,7 @@ $VerbosePreference="silentlycontinue"
 Import-Module AzureRM.Profile
 Import-Module AzureRM.Resources 
 Import-Module AzureRM.Compute 
+Import-Module AzureRM.Automation
 
 #
 # Logging on/off
@@ -47,8 +48,8 @@ $VerbosePreference="continue"
 Write-Verbose "- workspacename          : $workspacename"
 Write-Verbose "- logname                : $logName"
 Write-Verbose "- subscriptionIdList     : "
-$subscriptionIDList | ForEach-Object { Write-Verbose "-- $_" }
-Write-Verbose "- tagNameList            : " + $($tagnameList -join ', ')
+$subscriptionIDList | ForEach-Object { Write-Verbose "-- $($_.ToString())" }
+Write-Verbose "- tagNameList            : $($tagnameList -join ', ')"
 Write-Verbose "- AddVmDetails           : $addVmDetails"
 Write-Verbose "- runNumberVariableName  : $runNumberVariableName"
 
@@ -341,9 +342,9 @@ $sharedKey = $workspaceKeys.PrimarySharedKey
 #
 # get and increase the runnumber.
 #
-$runNumber = Get-AzureAutomationVariable -Name $runNumberVariableName
+$runNumber = Get-AutomationVariable -Name $runNumberVariableName -ErrorAction Stop
 Write-Verbose "- Current run number: $runNumber"
-Set-AzureAutomationVariable -Name $runNumberVariableName -Value $($runNumber + 1)
+Set-AutomationVariable -Name $runNumberVariableName -Value $($runNumber + 1)
 
 #
 # loop over subscriptions
