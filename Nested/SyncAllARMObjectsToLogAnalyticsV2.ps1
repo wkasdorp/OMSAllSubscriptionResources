@@ -34,11 +34,13 @@ $batchSize = 1000
 #
 # import modules before we start verbose mode... 
 #
+$verbosePreferenceBefore=$VerbosePreference
 $VerbosePreference="silentlycontinue"
 Import-Module AzureRM.Profile
 Import-Module AzureRM.Resources 
 Import-Module AzureRM.Compute 
 Import-Module AzureRM.Automation
+$verbosePreference=$verbosePreferenceBefore
 
 #
 # Logging on/off
@@ -350,8 +352,9 @@ Set-AutomationVariable -Name $runNumberVariableName -Value $($runNumber + 1)
 # loop over subscriptions
 #
 if (-not $subscriptionIDList) {
-    Write-Verbose "- using default subscription of the automation account."
-    $subscriptionIDList = @([guid](Get-AzureRmContext).Subscription.Id)
+    $context = Get-AzureRmContext
+    $subscriptionIDList = @([guid]$context.Subscription.Id)
+    Write-Verbose "- using default subscription of the automation account: $($context.Subscription.Name))"
 }
 Write-Verbose "- Preparing to write data to log $($logName)."
 Write-verbose "- looping over subscription(s)."
