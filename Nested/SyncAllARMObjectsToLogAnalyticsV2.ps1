@@ -343,6 +343,11 @@ $sharedKey = $workspaceKeys.PrimarySharedKey
 
 #
 # get and increase the runnumber.
+# Example usage of query using runnumber (customlog name is WKLog10_CL):
+# WKLog10_CL 
+# | summarize runNumber = arg_max(RunNumber_d, *) by ResourceId
+# | where ResourceType == "Microsoft.Compute/virtualMachines"
+# | project TimeGenerated,runNumber,Name_s,tag_owner_s, ResourceType, OSType_s, PowerState_s 
 #
 $runNumber = Get-AutomationVariable -Name $runNumberVariableName -ErrorAction Stop
 Write-Verbose "- Current run number: $runNumber"
