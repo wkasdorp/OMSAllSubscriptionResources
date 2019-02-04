@@ -18,7 +18,7 @@
     "StartOfSchedule": {
       "type": "string",
       "metadata": {
-        "description": "Start of schedule, MUST be in the future, timezone UTC. Example format: 1/1/2019 12:00:00"
+        "description": "Start of schedule, MUST at least 15m in the future, timezone CET. Example format: 1/1/2019 12:00:00"
       }
     },
     "TargetLogName": {
@@ -38,13 +38,13 @@
     "SubscriptionIdList": {
       "type": "string",
       "metadata": {
-        "description": "List of subscription IDs to be scanned."
+        "description": "List of subscription IDs (GUID string) to be scanned, formatted as JSON string array."
       }
     },
     "TagNameList": {
       "type": "string",
       "metadata": {
-        "description": "List of tags to be retrieved."
+        "description": "List of tags to be retrieved, formatted as JSON string array."
       }
     }    
   },
@@ -58,7 +58,7 @@
       "Parameters": {
         "LogName" : "[parameters('TargetLogName')]",
         "WorkspaceName": "[parameters('WorkSpaceName')]",
-        "SubscriptionIDList" : "[parameters('SubscriptionIdList')]",
+        "SubscriptionIdList" : "[parameters('SubscriptionIdList')]",
         "TagNameList": "[parameters('TagNameList')]"
       },
       "ParametersUnused": {
@@ -75,7 +75,7 @@
     },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "Schedule": {
-      "Name": "Sync_Daily_4x",
+      "Name": "Sync_ARM_to_LA_Daily_4x",
       "Description": "Trigger four times per day",
       "IsEnabled": "true",
       "Interval": "6",
@@ -86,10 +86,9 @@
     },
     "RunOnceScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),'RunOnce',variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "RunOnceSchedule": {
-      "Name": "Sync_RunOnce",
+      "Name": "Sync_ARM_to_LA_RunOnce",
       "Description": "Runs once, 5 minutes after provisioning",
       "IsEnabled": "true",
-      "TimeZone": "CET",
       "LinkGuid": "[variables('RunOnceScheduleLinkGUID')]"
     }
   },
