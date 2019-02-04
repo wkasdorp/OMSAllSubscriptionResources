@@ -26,7 +26,7 @@
       "metadata": {
         "description": "Name of the target logfile name in Log Analytics (case sensitive!)"
       },
-      "defaultValue": "WKLog9"
+      "defaultValue": "WKLog10"
     },
     "WorkSpaceName": {
       "type": "string",

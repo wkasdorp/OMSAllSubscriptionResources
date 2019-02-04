@@ -379,6 +379,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
             SubscriptionId = $subscriptionId.ToString()
             SubscriptionName = $context.Subscription.Name
             ResourceGroupName = $rg.ResourceGroupName
+            ResourceID = $rg.ResourceId
             Name = $rg.ResourceGroupName
             Location = $rg.Location
             ResourceType = "(ResourceGroup)"
@@ -404,7 +405,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         $objectsInRg = @(Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName)
         if ($AddVmDetails)
         {
-            $vmList = get-azurermvm -ResourceGroupName $rg.ResourceGroupName -Status
+            $vmList = Get-AzureRmVM -ResourceGroupName $rg.ResourceGroupName -Status
         }
 
         #
@@ -417,6 +418,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 SubscriptionId = $subscriptionId.ToString()
                 SubscriptionName = $context.Subscription.Name
                 ResourceGroupName = $rg.ResourceGroupName
+                ResourceID = $resource.ResourceId
                 Name = $resource.Name
                 Location = $resource.Location
                 ResourceType = $resource.ResourceType
