@@ -332,6 +332,7 @@ Connect-AzureRmAccount `
     -TenantId $servicePrincipalConnection.TenantId `
     -ApplicationId $servicePrincipalConnection.ApplicationId `
     -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint `
+    -SubscriptionID $servicePrincipalConnection.SubscriptionId `
     -ErrorAction Stop
 
 Write-Verbose "- Authentication succeeded. "
@@ -410,8 +411,8 @@ foreach ($subscriptionID in $subscriptionIDlist)
         # get all the child objects and add the RG reference
         #
         # Start by getting all resources in the RG, and the VM details as well if needed
-        #
-        $objectsInRg = @(Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName)
+        # NOTE: following does not work in all AzureRM versions (ambiguous parameterset): Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName 
+        $objectsInRg = @(Get-AzureRmResource -oDataQuery "`$filter=resourcegroup eq '$rg.ResourceGroupName'" )
         if ($AddVmDetails)
         {
             $vmList = Get-AzureRmVM -ResourceGroupName $rg.ResourceGroupName -Status
