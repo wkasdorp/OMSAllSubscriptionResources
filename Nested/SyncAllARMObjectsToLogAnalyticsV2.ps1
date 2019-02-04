@@ -289,7 +289,7 @@ function Get-LogAnalyticsWorkSpaceKeys {
         throw "Could not resolve Resource Group somehow"
     }
 
-    # Now we have the subscription, RG and workspace name, get the keys.     #
+    # Now we have the subscription, RG and workspace name, get the keys.     
     # construct REST API parameters.
     # https://management.azure.com/subscriptions/0568048c-62e3-485e-bc1b-156f2867e43c/resourcegroups/rg-omstest/providers/Microsoft.OperationalInsights/workspaces/wk-oms2/sharedKeys?api-version=2015-11-01-preview
     #
