@@ -343,7 +343,8 @@ $sharedKey = $workspaceKeys.PrimarySharedKey
 
 #
 # get and increase the runnumber.
-# Example usage of query using runnumber (customlog name is WKLog10_CL):
+# Example usage of query using runnumber (customlog name is WKLog10_CL). This gets all objects
+# that were present when the inventory was run. 
 # WKLog10_CL 
 # | summarize runNumber = arg_max(RunNumber_d, *) by ResourceId
 # | where ResourceType == "Microsoft.Compute/virtualMachines"
