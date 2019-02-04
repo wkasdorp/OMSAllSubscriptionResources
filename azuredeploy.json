@@ -58,7 +58,7 @@
       "Parameters": {
         "LogName" : "[parameters('TargetLogName')]",
         "WorkspaceName": "[parameters('WorkSpaceName')]",
-        "SubscriptionList" : "[parameters('SubscriptionIdList')]",
+        "SubscriptionIDList" : "[parameters('SubscriptionIdList')]",
         "TagNameList": "[parameters('TagNameList')]"
       },
       "ParametersUnused": {

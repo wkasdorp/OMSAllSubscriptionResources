@@ -385,7 +385,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         }        
         foreach ($tagname in $tagnameList)
         {
-            $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
+            $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
         }
         if ($AddVmDetails)
         {
