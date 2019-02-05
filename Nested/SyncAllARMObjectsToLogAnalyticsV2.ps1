@@ -29,7 +29,7 @@ Param
 )
 
 # maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
-$batchSize = 1000
+$batchSize = 500
 
 #
 # import modules before we start verbose mode... 
@@ -225,6 +225,7 @@ Function Send-OMSAPIIngestionFileCloned
         Write-Verbose "Send-OMSAPIINgestionFile: Invoke-WebRequest accepted (status $($response.StatusCode))"
     } else {
         $badStatus = $response.StatusCode
+        Write-Verbose "Send-OMSAPIINgestionFile: Invoke-WebRequest ERROR (status $($response.StatusCode))"
         throw "Send-OMSAPIINgestionFile: Invoke-WebRequest returned '$badStatus'"
     }
 }
@@ -376,11 +377,16 @@ foreach ($subscriptionID in $subscriptionIDlist)
         throw "Failed to authenticate to subscriptionID '$subscriptionID': $ErrorMessage"
     }
     
-    Write-Verbose "-- reading full resource list for subscription '$($context.Subscription.Name)' in chunks of $batchSize objects."
+    Write-Verbose "-- processing resource list for subscription '$($context.Subscription.Name)' in chunks of $batchSize objects."
+    $ResourceGroupList = Get-AzureRmResourceGroup -ErrorAction stop
+    Write-Verbose "-- Found $($ResourceGroupList.Count) resource groups."
+    $CachedResources = Get-AzureRmResource -ErrorAction stop
+    Write-Verbose "-- found $($CachedResources.count) resources."
     $resourceList = @()
     $batchCount = 0
     $objectCount = 0
-    Get-AzureRmResourceGroup -PipelineVariable rg | ForEach-Object {
+    foreach ($rg in $ResourceGroupList) 
+    {
         #
         # first, get the RG details and add that to the output records.
         #
@@ -411,8 +417,10 @@ foreach ($subscriptionID in $subscriptionIDlist)
         # get all the child objects and add the RG reference
         #
         # Start by getting all resources in the RG, and the VM details as well if needed
-        # NOTE: following does not work in all AzureRM versions (ambiguous parameterset): Get-AzureRmResource -ResourceGroupName $rg.ResourceGroupName 
-        $objectsInRg = @(Get-AzureRmResource -oDataQuery "`$filter=resourcegroup eq '$rg.ResourceGroupName'" )
+        # Note: using this construction to avoid 'get-azurermobject -resourcegroup <xx>' which does
+        # not work on all Module versions (know bug).
+        #
+        $objectsInRg = @($CachedResources | Where-Object ResourceGroupName -eq $rg.ResourceGroupName)
         if ($AddVmDetails)
         {
             $vmList = Get-AzureRmVM -ResourceGroupName $rg.ResourceGroupName -Status
@@ -467,7 +475,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         #
         if ($batchCount -ge $batchSize)
         {
-            Write-Verbose "--- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
+            Write-Verbose "-- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
             $body = $resourceList | ConvertTo-Json
             try {
                 Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
@@ -485,9 +493,11 @@ foreach ($subscriptionID in $subscriptionIDlist)
     #
     if ($batchCount -gt 0)
     {
-        Write-Verbose "--- Flushing final $batchCount objects to the workspace. Total object count: $objectCount"
+        Write-Verbose "-- Flushing final $batchCount objects to the workspace. Total object count: $objectCount"
         $body = $resourceList | ConvertTo-Json
         Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
     }
     Write-Verbose "-- Wrote total $objectCount objects for subscription '$($context.Subscription.Name)'"
 }
+
+exit 0
