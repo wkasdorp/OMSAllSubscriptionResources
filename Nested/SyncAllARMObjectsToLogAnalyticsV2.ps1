@@ -29,7 +29,9 @@ Param
 )
 
 # maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
-$batchSize = 500
+# HOWEVER, with batch sizes larger than 100 we are seeing memory problems with Azure Runbook Sandboxes, which
+# are limited to 400 MB Max. So for now it's set to 100 even though larger sizes would be more efficient. 
+$batchSize = 100
 
 #
 # import modules before we start verbose mode... 
