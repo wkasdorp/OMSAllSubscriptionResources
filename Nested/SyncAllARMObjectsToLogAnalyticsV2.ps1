@@ -496,14 +496,15 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 $ErrorMessage = $_.Exception.Message
                 throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
             }
-            Remove-Variable resourceList
-            $resourceList = @()
-            $batchCount = 0
-            
+
             #
             # try to clean up memory.
             #
+            Remove-Variable resourceList
+            Remove-Variable objectsInRg
             [System.GC]::GetTotalMemory(‘forcefullcollection’) | out-null
+            $resourceList = @()
+            $batchCount = 0
         }
     }  
 
