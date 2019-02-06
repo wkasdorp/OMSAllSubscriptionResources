@@ -382,8 +382,19 @@ foreach ($subscriptionID in $subscriptionIDlist)
     Write-Verbose "-- processing resource list for subscription '$($context.Subscription.Name)' in chunks of $batchSize objects."
     $ResourceGroupList = Get-AzureRmResourceGroup -ErrorAction stop
     Write-Verbose "-- Found $($ResourceGroupList.Count) resource groups."
-    $CachedResources = Get-AzureRmResource -ErrorAction stop
-    Write-Verbose "-- found $($CachedResources.count) resources."
+    
+    #
+    # writing resource list to disk instead of caching it in memory; we can only use 400 MB memory in a runbook.
+    #
+    $cacheFile = "$($ENV:Temp)\resourcelist.txt"
+    if (Test-Path -Path $cacheFile)
+    {
+        Remove-Item $cacheFile -Force
+        "-- found and removed temp file: $($cachefile)"
+    }
+    Get-AzureRmResource -ErrorAction stop | Export-Clixml $cacheFile -Force
+    Write-Verbose "-- wrote resources to temp file: $($cachefile)"
+    
     $resourceList = @()
     $batchCount = 0
     $objectCount = 0
@@ -422,7 +433,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         # Note: using this construction to avoid 'get-azurermobject -resourcegroup <xx>' which does
         # not work on all Module versions (know bug).
         #
-        $objectsInRg = @($CachedResources | Where-Object ResourceGroupName -eq $rg.ResourceGroupName)
+        $objectsInRg = @(Import-Clixml -Path $cacheFile | Where-Object ResourceGroupName -eq $rg.ResourceGroupName)
         if ($AddVmDetails)
         {
             $vmList = Get-AzureRmVM -ResourceGroupName $rg.ResourceGroupName -Status
@@ -485,8 +496,14 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 $ErrorMessage = $_.Exception.Message
                 throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
             }
+            Remove-Variable resourceList
             $resourceList = @()
-            $batchCount = 0    
+            $batchCount = 0
+            
+            #
+            # try to clean up memory.
+            #
+            [System.GC]::GetTotalMemory(‘forcefullcollection’) | out-null
         }
     }  
 
