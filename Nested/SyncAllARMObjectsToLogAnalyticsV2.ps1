@@ -431,7 +431,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         #
         # Start by getting all resources in the RG, and the VM details as well if needed
         # Note: using this construction to avoid 'get-azurermobject -resourcegroup <xx>' which does
-        # not work on all Module versions (know bug).
+        # not work on all Module versions (known bug).
         #
         $objectsInRg = @(Import-Clixml -Path $cacheFile | Where-Object ResourceGroupName -eq $rg.ResourceGroupName)
         if ($AddVmDetails)
@@ -456,7 +456,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
             }            
             foreach ($tagname in $tagnameList)
             {
-                $record | Add-Member -MemberType NoteProperty -Name "tag-$($tagname)" -Value $_.tags.$tagname
+                $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
             }
 
             #
