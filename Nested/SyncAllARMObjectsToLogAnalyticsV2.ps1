@@ -23,6 +23,18 @@ Param
     [bool]$AddVmDetails = $true
 )
 
+<# Example Log Analytics query: get _all_ VMs on a given day
+
+let startDate = todatetime("2019-02-07");
+let duration = totimespan(24h);
+YourLogName_CL 
+| where TimeGenerated between(startDate .. (startDate+duration) )
+| summarize timeStamp = arg_max(TimeGenerated, *) by ResourceId
+| where ResourceType == "Microsoft.Compute/virtualMachines"
+| project timeStamp, Name_s, ResourceType, OSType_s, PowerState_s,tag_Owner_s
+
+#>
+
 #
 # maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
 # HOWEVER, with batch sizes larger than 100 we are seeing memory problems with Azure Runbook Sandboxes, which
@@ -47,7 +59,7 @@ Import-Module AzureRM.Automation
 $verbosePreference=$verbosePreferenceBefore
 
 #
-# Logging on/off
+# Verbose Logging on/off
 #
 $VerbosePreference="continue"
 
