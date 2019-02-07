@@ -101,19 +101,6 @@
       }
     },
     {
-      "name": "[concat(parameters('accountName'), '/', variables('Variable').Name)]",
-      "type": "microsoft.automation/automationAccounts/variables",
-      "apiVersion": "[variables('AutomationApiVersion')]",
-      "dependsOn": [
-      ],
-      "properties": {
-        "description": "[variables('Variable').Description]",
-        "isEncrypted": "[variables('Variable').Encrypted]",
-        "type": "[variables('Variable').Type]",
-        "value": "[variables('Variable').Value]"
-      }
-    },
-    {
       "name": "[concat(parameters('accountName'), '/', variables('Schedule').Name)]",
       "type": "microsoft.automation/automationAccounts/schedules",
       "apiVersion": "[variables('AutomationApiVersion')]",
