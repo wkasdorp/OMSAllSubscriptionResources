@@ -62,13 +62,6 @@
         "TagNameList": "[parameters('TagNameList')]"
       }
     },
-    "Variable": {
-      "Name": "SyncRunNumber",
-      "Description": "#times runbook has run. Useful to get all resources that were present at that time.",
-      "Encrypted": 0,
-      "Type": "Integer",
-      "Value": "0"
-    },
     "ScheduleLinkGUID": "[guid(uniquestring(resourceGroup().id),variables('Runbook').Name,parameters('StartOfSchedule'))]",
     "Schedule": {
       "Name": "Sync_ARM_to_LA_Daily_4x",

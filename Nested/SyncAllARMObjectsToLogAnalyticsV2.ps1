@@ -14,24 +14,26 @@ Param
     [Guid[]]$subscriptionIDList,
     
     # List of tag names to sync. Each name will have its own column.
-    # runbook input example: ["owner","bo-number"]
+    # runbook input example: ["owner","bo_number"]
     [Parameter(Mandatory = $false)]
     [String[]]$tagnameList,
     
     # add some VM details: OStype, Powerstate
     [Parameter(Mandatory = $false)]
-    [bool]$AddVmDetails = $true,
-
-    # runcounter Automation Variable Name. This is useful for queries where you want to grab all objects
-    # that were present during a given run, but not anything else. 
-    [Parameter(Mandatory = $false)]
-    [string]$runNumberVariableName = "SyncRunNumber"
+    [bool]$AddVmDetails = $true
 )
 
+#
 # maximum number of objects to send in one shot. 30 MB is the max, which should easily hold 10,000 objects
 # HOWEVER, with batch sizes larger than 100 we are seeing memory problems with Azure Runbook Sandboxes, which
 # are limited to 400 MB Max. So for now it's set to 100 even though larger sizes would be more efficient. 
+#
 $batchSize = 100
+
+#
+# replace forbidden chars in tagnames with _
+#
+$sanitizedTagList = $tagnameList | ForEach-Object { $_ -replace '[\s-(){}]','_' }
 
 #
 # import modules before we start verbose mode... 
@@ -53,9 +55,8 @@ Write-Verbose "- workspacename          : $workspacename"
 Write-Verbose "- logname                : $logName"
 Write-Verbose "- subscriptionIdList     : "
 $subscriptionIDList | ForEach-Object { Write-Verbose "-- $($_.Guid)" }
-Write-Verbose "- tagNameList            : $($tagnameList -join ', ')"
+Write-Verbose "- tagNameList            : $($sanitizedTagList -join ', ')"
 Write-Verbose "- AddVmDetails           : $addVmDetails"
-Write-Verbose "- runNumberVariableName  : $runNumberVariableName"
 
 #region Cloned Module https://www.powershellgallery.com/packages/OMSIngestionAPI/1.6.0
 # Needed to avoid having to add modules to the automation account.  
@@ -346,19 +347,6 @@ $sharedKey = $workspaceKeys.PrimarySharedKey
 #endregion
 
 #
-# get and increase the runnumber.
-# Example usage of query using runnumber (customlog name is WKLog10_CL). This gets all objects
-# that were present when the inventory was run. 
-# WKLog10_CL 
-# | summarize runNumber = arg_max(RunNumber_d, *) by ResourceId
-# | where ResourceType == "Microsoft.Compute/virtualMachines"
-# | project TimeGenerated,runNumber,Name_s,tag_owner_s, ResourceType, OSType_s, PowerState_s 
-#
-$runNumber = Get-AutomationVariable -Name $runNumberVariableName -ErrorAction Stop
-Write-Verbose "- Current run number: $runNumber"
-Set-AutomationVariable -Name $runNumberVariableName -Value $($runNumber + 1)
-
-#
 # loop over subscriptions
 #
 if (-not $subscriptionIDList) {
@@ -392,6 +380,8 @@ foreach ($subscriptionID in $subscriptionIDlist)
         Remove-Item $cacheFile -Force
         "-- found and removed temp file: $($cachefile)"
     }
+    # WK possible optimization: get all resources, and filter the VMs out of it using filter on type. Then, order
+    # by RG and user the get-azurerm to get status information. This avoids the double loop over RG. 
     Get-AzureRmResource -ErrorAction stop | Export-Clixml $cacheFile -Force
     Write-Verbose "-- wrote resources to temp file: $($cachefile)"
     
@@ -404,7 +394,6 @@ foreach ($subscriptionID in $subscriptionIDlist)
         # first, get the RG details and add that to the output records.
         #
         $record = [pscustomobject]@{
-            RunNumber = $runNumber
             SubscriptionId = $subscriptionId.ToString()
             SubscriptionName = $context.Subscription.Name
             ResourceGroupName = $rg.ResourceGroupName
@@ -413,7 +402,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
             Location = $rg.Location
             ResourceType = "(ResourceGroup)"
         }        
-        foreach ($tagname in $tagnameList)
+        foreach ($tagname in $sanitizedTagList)
         {
             $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
         }
@@ -445,7 +434,6 @@ foreach ($subscriptionID in $subscriptionIDlist)
         foreach ($resource in $objectsInRg)
         {
              $record = [pscustomobject]@{
-                RunNumber = $runNumber
                 SubscriptionId = $subscriptionId.ToString()
                 SubscriptionName = $context.Subscription.Name
                 ResourceGroupName = $rg.ResourceGroupName
@@ -454,7 +442,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 Location = $resource.Location
                 ResourceType = $resource.ResourceType
             }            
-            foreach ($tagname in $tagnameList)
+            foreach ($tagname in $sanitizedTagList)
             {
                 $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
             }
@@ -489,7 +477,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
         if ($batchCount -ge $batchSize)
         {
             Write-Verbose "-- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
-            $body = $resourceList | ConvertTo-Json
+            $body = $resourceList | ConvertTo-Json -Compress
             try {
                 Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
             } catch {
