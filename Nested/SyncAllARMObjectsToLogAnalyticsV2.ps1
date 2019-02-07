@@ -55,7 +55,7 @@ Write-Verbose "- workspacename          : $workspacename"
 Write-Verbose "- logname                : $logName"
 Write-Verbose "- subscriptionIdList     : "
 $subscriptionIDList | ForEach-Object { Write-Verbose "-- $($_.Guid)" }
-Write-Verbose "- tagNameList            : $($sanitizedTagList -join ', ')"
+Write-Verbose "- tagNameList            : $($tagnameList -join ', ')"
 Write-Verbose "- AddVmDetails           : $addVmDetails"
 
 #region Cloned Module https://www.powershellgallery.com/packages/OMSIngestionAPI/1.6.0
@@ -385,7 +385,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
     Get-AzureRmResource -ErrorAction stop | Export-Clixml $cacheFile -Force
     Write-Verbose "-- wrote resources to temp file: $($cachefile)"
     
-    $resourceList = @()
+    $resourceList = New-Object System.Collections.ArrayList
     $batchCount = 0
     $objectCount = 0
     foreach ($rg in $ResourceGroupList) 
@@ -401,17 +401,17 @@ foreach ($subscriptionID in $subscriptionIDlist)
             Name = $rg.ResourceGroupName
             Location = $rg.Location
             ResourceType = "(ResourceGroup)"
-        }        
-        foreach ($tagname in $sanitizedTagList)
-        {
-            $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
         }
+        for ($i=0; $i -lt $tagnameList.count; $i++)
+        {
+            $record | Add-Member -MemberType NoteProperty -Name "tag_$($sanitizedTagList[$i])" -Value $rg.tags."$($tagnameList[$i])"
+        }        
         if ($AddVmDetails)
         {
             $record | Add-Member -MemberType NoteProperty -Name "OSType" -Value ""
             $record | Add-Member -MemberType NoteProperty -Name "PowerState" -Value ""
         }
-        $resourceList += $record
+        [void]$resourceList.Add($record)
         $objectCount++
         $batchCount++
         
@@ -442,9 +442,9 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 Location = $resource.Location
                 ResourceType = $resource.ResourceType
             }            
-            foreach ($tagname in $sanitizedTagList)
+            for ($i=0; $i -lt $tagnameList.count; $i++)
             {
-                $record | Add-Member -MemberType NoteProperty -Name "tag_$($tagname)" -Value $_.tags.$tagname
+                $record | Add-Member -MemberType NoteProperty -Name "tag_$($sanitizedTagList[$i])" -Value $resource.tags."$($tagnameList[$i])"
             }
 
             #
@@ -455,7 +455,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 $vm = $null
                 $OSType = ""
                 $powerState = ""
-                $vm = $vmList | Where-Object id -eq $resource.id                
+                $vm = $vmList | Where-Object id -eq $resource.ResourceId                
                 if ($vm)
                 {
                     $OSType = [string]$vm.StorageProfile.OsDisk.OsType
@@ -464,7 +464,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
                 $record | Add-Member -MemberType NoteProperty -Name "OSType" -Value $OSType
                 $record | Add-Member -MemberType NoteProperty -Name "PowerState" -Value $powerState
             }
-            $resourceList += $record
+            [void]$resourceList.Add($record)
             $objectCount++
             $batchCount++
         }
@@ -491,7 +491,7 @@ foreach ($subscriptionID in $subscriptionIDlist)
             Remove-Variable resourceList
             Remove-Variable objectsInRg
             [System.GC]::GetTotalMemory(‘forcefullcollection’) | out-null
-            $resourceList = @()
+            $resourceList = New-Object System.Collections.ArrayList
             $batchCount = 0
         }
     }  
