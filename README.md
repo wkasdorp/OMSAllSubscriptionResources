@@ -1,4 +1,4 @@
-# Log Analytics Solution: sync all subscription objects to an workspace
+# Log Analytics Automation Runbook: sync all subscription objects to a Log Analytics Workspace
 
 When you are designing Log Analytics Queries using Kusto, there are some important use cases where you need to know the existence of certain object types.
 For instance:
