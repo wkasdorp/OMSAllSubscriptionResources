@@ -479,32 +479,30 @@ foreach ($subscriptionID in $subscriptionIDlist)
             [void]$resourceList.Add($record)
             $objectCount++
             $batchCount++
-        }
-        
-        #
-        # if we reach or exceed the batch size, flush. Note that resourceList at least contains the
-        # full count of the objects in the resource group. Since the maximum objects in an RG is 900, the total count
-        # can reach at least 1800 before flushing (current RG plus the previous one.).
-        #
-        if ($batchCount -ge $batchSize)
-        {
-            Write-Verbose "-- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
-            $body = $resourceList | ConvertTo-Json -Compress
-            try {
-                Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
-            } catch {
-                $ErrorMessage = $_.Exception.Message
-                throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
-            }
+                    
+            #
+            # if we reach or exceed the batch size, flush.
+            #
+            if ($batchCount -ge $batchSize)
+            {
+                Write-Verbose "-- Batch count reached $batchCount, now writing to the workspace. Total object count: $objectCount"
+                $body = $resourceList | ConvertTo-Json -Compress
+                try {
+                    Send-OMSAPIIngestionFileCloned -customerId $customerId -sharedKey $sharedKey -body $body -logType $logName -TimeStampField CreationTime
+                } catch {
+                    $ErrorMessage = $_.Exception.Message
+                    throw "Failed to write data to OMS workspace for subscription '$subscriptionID': $ErrorMessage"        
+                }
 
-            #
-            # try to clean up memory.
-            #
-            Remove-Variable resourceList
-            Remove-Variable objectsInRg
-            [System.GC]::GetTotalMemory(‘forcefullcollection’) | out-null
-            $resourceList = New-Object System.Collections.ArrayList
-            $batchCount = 0
+                #
+                # try to clean up memory.
+                #
+                Remove-Variable resourceList
+                Remove-Variable objectsInRg
+                [System.GC]::GetTotalMemory(‘forcefullcollection’) | out-null
+                $resourceList = New-Object System.Collections.ArrayList
+                $batchCount = 0
+            }
         }
     }  
 
